@@ -1,0 +1,56 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <Wire.h>
+#include <BH1750.h>
+
+const char* ssid = "TU_WIFI";
+const char* password = "TU_PASSWORD";
+
+BH1750 lightMeter;
+const int ledPin = 5;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(ledPin, OUTPUT);
+
+  Wire.begin();
+  lightMeter.begin();
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("Conectado al WiFi");
+}
+
+void loop() {
+  float lux = lightMeter.readLightLevel();
+  Serial.print("Luminosidad: ");
+  Serial.print(lux);
+  Serial.println(" lx");
+
+  if (lux < 300) {
+    digitalWrite(ledPin, HIGH); // Encender luz
+    sendToServer(lux, "ON");
+  } else if (lux > 500) {
+    digitalWrite(ledPin, LOW); // Apagar luz
+    sendToServer(lux, "OFF");
+  }
+
+  delay(5000); // 5 segundos
+}
+
+void sendToServer(float lux, String estado) {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin("http://tu-servidor.com/api/luz");
+    http.addHeader("Content-Type", "application/json");
+    
+    String json = "{\"lux\":" + String(lux) + ",\"estado\":\"" + estado + "\"}";
+    int httpResponseCode = http.POST(json);
+    
+    Serial.println("Código respuesta: " + String(httpResponseCode));
+    http.end();
+  }
+}

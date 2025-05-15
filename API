@@ -1,0 +1,20 @@
+const express = require('express');
+const app = express();
+app.use(express.json());
+
+let estadoLuz = "OFF";
+let luxActual = 0;
+
+app.post('/api/luz', (req, res) => {
+  const { lux, estado } = req.body;
+  luxActual = lux;
+  estadoLuz = estado;
+  console.log(`Luminosidad: ${lux} | Estado: ${estado}`);
+  res.status(200).send({ ok: true });
+});
+
+app.get('/api/luz', (req, res) => {
+  res.send({ lux: luxActual, estado: estadoLuz });
+});
+
+app.listen(3000, () => console.log("API corriendo en http://localhost:3000"));
